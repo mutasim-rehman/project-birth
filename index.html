@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cosmic Journey — From Big Bang to Planets</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div id="intro-overlay">
+    <div id="intro-prompt">Click anywhere to begin</div>
+    <div id="intro-title">
+      <span id="intro-main">Cosmic Journey</span>
+      <span id="intro-sub">From the Big Bang to the Birth of Planets</span>
+    </div>
+  </div>
+
+  <button id="btn-blackhole" class="blackhole-portal" title="Witness a Black Hole — Enter the singularity">
+    <span class="portal-icon">◉</span>
+    <span class="portal-label">Black Hole</span>
+    <span class="portal-sublabel">Enter the Singularity</span>
+  </button>
+
+  <div id="ui">
+    <div id="title">Cosmic Journey</div>
+    <div id="subtitle">From Big Bang to Planets <span id="god-badge">GOD MODE</span></div>
+
+    <div id="stage-display">
+      <span id="stage-era"></span>
+      <span id="stage-number">1</span>
+      <span id="stage-divider">/</span>
+      <span id="stage-total">11</span>
+      <div id="stage-name">Big Bang</div>
+      <div id="stage-desc">The singularity explodes. Space, time, and matter burst into existence.</div>
+    </div>
+
+    <div id="progress-bar">
+      <div id="progress-fill"></div>
+    </div>
+
+    <div id="controls">
+      <button id="btn-prev" title="Previous">← Prev</button>
+      <button id="btn-play" title="Auto-play">▶ Play</button>
+      <button id="btn-next" title="Next">Next →</button>
+      <button id="btn-cinematic" title="Cinematic / Free Look">🎬 Cinematic</button>
+      <button id="btn-fullscreen" title="Fullscreen">⛶</button>
+    </div>
+
+    <div id="journey-panel">
+      <div id="timeline"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
