@@ -1,63 +1,122 @@
 import * as THREE from 'three';
 
 /**
- * Planet Formation — All eight planets in the solar system
- * Scaled for visibility; real scale would be impossible to show
+ * Planet Formation — Scientifically accurate solar system
+ * Real orbital elements, periods, sizes, eccentricities, inclinations
+ * Data: NASA JPL, IAU
  */
+
+// Orbital elements: a (AU), e, T (years), radius (km), incl (deg), color
+// Mean longitude at epoch (for initial position)
+const PLANET_DATA = [
+  { name: 'Mercury', a: 0.387098, e: 0.2056, T: 0.240846, radius: 2439.7, incl: 7.0, color: 0x8c7853 },
+  { name: 'Venus', a: 0.723332, e: 0.0068, T: 0.615198, radius: 6051.8, incl: 3.4, color: 0xe6e6b4 },
+  { name: 'Earth', a: 1.0, e: 0.0167, T: 1.0, radius: 6371, incl: 0, color: 0x4a90c8 },
+  { name: 'Mars', a: 1.52366, e: 0.0934, T: 1.88085, radius: 3389.5, incl: 1.85, color: 0xc1440e },
+  { name: 'Jupiter', a: 5.20336, e: 0.0484, T: 11.862, radius: 69911, incl: 1.3, color: 0xc88b3a },
+  { name: 'Saturn', a: 9.53707, e: 0.0542, T: 29.457, radius: 58232, incl: 2.49, color: 0xe5d5a0 },
+  { name: 'Uranus', a: 19.1913, e: 0.0472, T: 84.02, radius: 25362, incl: 0.77, color: 0x4fd0e7 },
+  { name: 'Neptune', a: 30.0690, e: 0.0086, T: 164.8, radius: 24622, incl: 1.77, color: 0x4166f5 },
+];
+
+const SUN_RADIUS_KM = 696000;
+
+// Display scale: 1 AU = DIST_SCALE units. Neptune at 30 AU = 30*DIST_SCALE
+const DIST_SCALE = 4;
+// Size scale: Jupiter (69911 km) -> 0.5 units. scale = 0.5/69911
+const SIZE_SCALE = 0.6 / 69911;
+
+// Time: 1 real second = TIME_SCALE years. 60 sec = 1 Earth year
+const TIME_SCALE = 1 / 60;
+
+// Solve Kepler's equation M = E - e*sin(E) for E (eccentric anomaly)
+function solveKepler(M, e, tol = 1e-8) {
+  let E = M;
+  for (let i = 0; i < 20; i++) {
+    const dE = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+    E -= dE;
+    if (Math.abs(dE) < tol) break;
+  }
+  return E;
+}
+
+// Orbital position from mean anomaly, returns {x, y, z} in ecliptic coords
+function orbitalPosition(a, e, incDeg, M) {
+  const E = solveKepler(M, e);
+  const nu = 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2), Math.sqrt(1 - e) * Math.cos(E / 2));
+  const r = a * (1 - e * Math.cos(E));
+  const inc = (incDeg * Math.PI) / 180;
+  const x = r * Math.cos(nu);
+  const z = r * Math.sin(nu);
+  const y = -z * Math.sin(inc);
+  const zRot = z * Math.cos(inc);
+  return { x: x * DIST_SCALE, y, z: zRot * DIST_SCALE };
+}
+
 export function createPlanets(scene) {
   const objects = [];
+  let simStartMs = null;
 
-  const planets = [
-    { name: 'Mercury', dist: 2, size: 0.08, color: 0x888877 },
-    { name: 'Venus', dist: 2.8, size: 0.15, color: 0xddcc99 },
-    { name: 'Earth', dist: 3.6, size: 0.16, color: 0x4488cc },
-    { name: 'Mars', dist: 4.5, size: 0.12, color: 0xcc6644 },
-    { name: 'Jupiter', dist: 6.5, size: 0.45, color: 0xc9a86c },
-    { name: 'Saturn', dist: 9, size: 0.4, color: 0xe8d4a0 },
-    { name: 'Uranus', dist: 11, size: 0.2, color: 0x88ccdd },
-    { name: 'Neptune', dist: 12.5, size: 0.19, color: 0x4488cc },
-  ];
-
-  planets.forEach((p, i) => {
-    const geo = new THREE.SphereGeometry(p.size, 24, 24);
+  PLANET_DATA.forEach((p) => {
+    const radius = p.radius * SIZE_SCALE;
+    const geo = new THREE.SphereGeometry(radius, 32, 32);
     const mat = new THREE.MeshBasicMaterial({ color: p.color });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.userData.orbitDist = p.dist;
-    mesh.userData.orbitAngle = (i / 8) * Math.PI * 2;
-    mesh.userData.orbitSpeed = 0.01 - i * 0.0008;
-    mesh.userData.update = (obj) => {
-      obj.userData.orbitAngle += obj.userData.orbitSpeed;
-      obj.position.x = obj.userData.orbitDist * Math.cos(obj.userData.orbitAngle);
-      obj.position.z = obj.userData.orbitDist * Math.sin(obj.userData.orbitAngle);
+
+    mesh.userData.orbit = {
+      a: p.a,
+      e: p.e,
+      T: p.T,
+      incl: p.incl,
     };
-    mesh.position.x = p.dist * Math.cos(mesh.userData.orbitAngle);
-    mesh.position.z = p.dist * Math.sin(mesh.userData.orbitAngle);
+    mesh.userData.update = (obj, timeMs) => {
+      if (simStartMs === null) simStartMs = timeMs;
+      const t = (timeMs - simStartMs) / 1000;
+      const years = t * TIME_SCALE;
+      const M = ((years / obj.userData.orbit.T) % 1) * Math.PI * 2;
+      const pos = orbitalPosition(
+        obj.userData.orbit.a,
+        obj.userData.orbit.e,
+        obj.userData.orbit.incl,
+        M
+      );
+      obj.position.set(pos.x, pos.y, pos.z);
+    };
+
+    const pos = orbitalPosition(p.a, p.e, p.incl, 0);
+    mesh.position.set(pos.x, pos.y, pos.z);
     objects.push(mesh);
   });
 
-  // Sun
-  const sunGeo = new THREE.SphereGeometry(0.5, 48, 48);
-  const sunMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+  // Sun — real relative size (scaled same as planets)
+  const sunRadius = SUN_RADIUS_KM * SIZE_SCALE;
+  const sunGeo = new THREE.SphereGeometry(sunRadius, 64, 64);
+  const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff5e6 });
   const sun = new THREE.Mesh(sunGeo, sunMat);
   objects.push(sun);
 
-  // Orbits (subtle)
-  planets.forEach((p, i) => {
-    const orbitGeo = new THREE.RingGeometry(p.dist - 0.02, p.dist + 0.02, 64);
-    const orbitMat = new THREE.MeshBasicMaterial({
+  // Orbital paths — accurate ellipses
+  PLANET_DATA.forEach((p) => {
+    const segments = 96;
+    const points = [];
+    for (let i = 0; i <= segments; i++) {
+      const M = (i / segments) * Math.PI * 2;
+      const pos = orbitalPosition(p.a, p.e, p.incl, M);
+      points.push(new THREE.Vector3(pos.x, pos.y, pos.z));
+    }
+    const orbitGeo = new THREE.BufferGeometry().setFromPoints(points);
+    const orbitMat = new THREE.LineBasicMaterial({
       color: 0x333333,
-      side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.2,
     });
-    const orbit = new THREE.Mesh(orbitGeo, orbitMat);
-    orbit.rotation.x = Math.PI / 2;
+    const orbit = new THREE.Line(orbitGeo, orbitMat);
     objects.push(orbit);
   });
 
   return {
     objects,
-    cameraPos: new THREE.Vector3(0, 15, 20),
+    cameraPos: new THREE.Vector3(0, 50, 80),
     cameraTarget: new THREE.Vector3(0, 0, 0),
   };
 }

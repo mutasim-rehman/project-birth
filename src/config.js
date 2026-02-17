@@ -14,7 +14,7 @@ export const UNIVERSE_JOURNEY = [
   { id: 'nebula', name: 'Solar Nebula', era: 'Solar System', desc: 'A cloud of gas and dust collapses. A spinning disk forms around a protostar. The stage is set.', creator: 'nebula' },
   { id: 'sun', name: 'Sun Ignition', era: 'Solar System', desc: 'Fusion begins. Hydrogen fuses into helium. Our star is born—the Sun.', creator: 'sun' },
   { id: 'planetesimals', name: 'Planetesimals', era: 'Solar System', desc: 'Dust clumps into rocks. Rocks collide and stick. Building blocks of planets emerge.', creator: 'planetesimals' },
-  { id: 'planets', name: 'Planet Formation', era: 'Solar System', desc: 'Eight worlds take shape. Rocky inner planets. Gas and ice giants beyond. The solar system is complete.', creator: 'planets' },
+  { id: 'planets', name: 'Planet Formation', era: 'Solar System', desc: 'Eight worlds orbit in Keplerian ellipses. Real sizes, periods, eccentricities. Rocky inner planets. Gas and ice giants beyond.', creator: 'planets' },
 ];
 
 // Black Hole Journey (5 stages) — optional deep-dive

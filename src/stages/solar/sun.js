@@ -2,14 +2,14 @@ import * as THREE from 'three';
 
 /**
  * Sun Ignition — Fusion begins, star is born
+ * Sun: G2V, Teff ~5778 K, blackbody peak ~500 nm
  */
 export function createSun(scene) {
   const objects = [];
 
-  // Sun
   const sunGeo = new THREE.SphereGeometry(1.2, 64, 64);
   const sunMat = new THREE.MeshBasicMaterial({
-    color: 0xffffaa,
+    color: 0xfff9eb,
     transparent: true,
     opacity: 0.95,
   });

@@ -361,3 +361,25 @@ html, body {
   padding: 0.5rem 0.8rem !important;
   font-size: 1rem !important;
 }
+
+#canvas-hint {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s ease 2s;
+}
+
+body.journey-started #canvas-hint {
+  opacity: 1;
+}
+
+#canvas-hint:hover {
+  opacity: 0.6;
+}
