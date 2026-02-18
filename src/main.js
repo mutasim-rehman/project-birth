@@ -137,6 +137,7 @@ composer.addPass(filmGrainPass);
 let currentMode = 'universe'; // 'universe' | 'blackhole'
 let currentStage = -1;
 let stageObjects = [];
+let stageEnterTime = 0; // When current stage was entered (for time-relative animations)
 let cameraPosition = new THREE.Vector3(0, 0, 25);
 let cameraTarget = new THREE.Vector3(0, 0, 0);
 let isPlaying = false;
@@ -195,6 +196,7 @@ function transitionToStage(nextIndex) {
 
   currentStage = nextIndex;
   stageObjects = [];
+  stageEnterTime = performance.now();
 
   const creator = CREATORS[nextInfo.creator];
   const isBlackHoleActive = currentMode === 'blackhole' && nextInfo.creator === 'bh-active';
@@ -288,6 +290,7 @@ function goToStage(index, instant = false) {
 
   currentStage = index;
   destroyCurrentStage();
+  stageEnterTime = performance.now();
   const stageInfo = journey[index];
   const creator = CREATORS[stageInfo.creator];
   const isBlackHoleActive = currentMode === 'blackhole' && stageInfo.creator === 'bh-active';
@@ -435,9 +438,10 @@ document.addEventListener('keydown', startJourney);
 function animate(time) {
   requestAnimationFrame(animate);
 
+  const stageTime = currentStage >= 0 ? Math.max(0, time - stageEnterTime) : 0;
   const dt = 0.016;
   stageObjects.forEach((obj) => {
-    if (obj.userData?.update) obj.userData.update(obj, time);
+    if (obj.userData?.update) obj.userData.update(obj, stageTime);
     if (obj.rotation && !obj.userData?.orbitDist) obj.rotation.y += (obj.userData?.rotSpeed ?? 0) * dt;
   });
 

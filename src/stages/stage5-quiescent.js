@@ -62,6 +62,57 @@ export function createStage5(scene) {
   orbitStars.userData.rotSpeed = 0.006;
   objects.push(orbitStars);
 
+  // Remnant debris — last of the mess, sparse and fading (bridges from Active)
+  const remnantCount = 180;
+  const remPos = new Float32Array(remnantCount * 3);
+  const remR = new Float32Array(remnantCount);
+  const remTheta = new Float32Array(remnantCount);
+  const remIncl = new Float32Array(remnantCount);
+  for (let i = 0; i < remnantCount; i++) {
+    const r = 1.5 + Math.random() * 4;
+    const theta = Math.random() * Math.PI * 2;
+    const incl = (Math.random() - 0.5) * 0.4;
+    remR[i] = r;
+    remTheta[i] = theta;
+    remIncl[i] = incl;
+    remPos[i * 3] = r * Math.cos(theta) * Math.cos(incl);
+    remPos[i * 3 + 1] = r * Math.sin(incl) * 0.2;
+    remPos[i * 3 + 2] = r * Math.sin(theta) * Math.cos(incl);
+  }
+  const remGeo = new THREE.BufferGeometry();
+  remGeo.setAttribute('position', new THREE.BufferAttribute(remPos, 3));
+  const remMat = new THREE.PointsMaterial({
+    size: 0.06,
+    color: 0x664422,
+    transparent: true,
+    opacity: 0.2,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const remnants = new THREE.Points(remGeo, remMat);
+  remnants.userData.remR = remR;
+  remnants.userData.remTheta = remTheta;
+  remnants.userData.remIncl = remIncl;
+  remnants.userData.update = (obj, time) => {
+    const pos = obj.geometry.attributes.position;
+    const rArr = obj.userData.remR;
+    const tArr = obj.userData.remTheta;
+    const inclArr = obj.userData.remIncl;
+    const t = time * 0.001;
+    for (let i = 0; i < remnantCount; i++) {
+      const r = rArr[i];
+      const angle = tArr[i] + t * 0.02;
+      const incl = inclArr[i];
+      const x = r * Math.cos(angle);
+      const z = r * Math.sin(angle);
+      pos.array[i * 3] = x * Math.cos(incl);
+      pos.array[i * 3 + 1] = r * 0.2 * Math.sin(incl);
+      pos.array[i * 3 + 2] = z * Math.cos(incl);
+    }
+    pos.needsUpdate = true;
+  };
+  objects.push(remnants);
+
   // Subtle gravitational well glow
   const glowGeo = new THREE.SphereGeometry(1.2, 48, 48);
   const glowMat = new THREE.MeshBasicMaterial({
